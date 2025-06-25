@@ -175,8 +175,7 @@ export const LinearRegressionInteractive: React.FC<LinearRegressionInteractivePr
             className="transition-all duration-300"
             style={{
               filter: isPlaying ? 'drop-shadow(0 0 8px #ef4444)' : 'none',
-              strokeDasharray: isPlaying ? '5,5' : 'none',
-              animation: isPlaying ? 'dash 1s linear infinite' : 'none'
+              strokeDasharray: isPlaying ? '5,5' : 'none'
             }}
           />
         )}
@@ -265,14 +264,6 @@ export const LinearRegressionInteractive: React.FC<LinearRegressionInteractivePr
           💡 Click on the chart to add more data points and see how the line adapts!
         </div>
       </div>
-      
-      <style jsx>{`
-        @keyframes dash {
-          to {
-            stroke-dashoffset: -10;
-          }
-        }
-      `}</style>
     </div>
   );
 };

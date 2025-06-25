@@ -18,14 +18,18 @@ export const CodeOptimizer: React.FC = () => {
   const [language, setLanguage] = useState('python');
 
   const analyzeAndOptimizeCode = (code: string, lang: string) => {
-    // Comprehensive code analysis and optimization
     const optimizations: OptimizationSuggestion[] = [];
     let optimized = code;
+
+    if (!code.trim()) {
+      return { optimized: '', optimizations: [] };
+    }
 
     // Python-specific optimizations
     if (lang === 'python') {
       // List comprehension optimization
-      if (code.includes('for') && code.includes('append')) {
+      const forLoopPattern = /(\w+)\s*=\s*\[\]\s*\n\s*for\s+(\w+)\s+in\s+(\w+):\s*\n\s*\1\.append\(([^)]+)\)/g;
+      if (forLoopPattern.test(code)) {
         optimizations.push({
           type: 'performance',
           title: 'Use List Comprehension',
@@ -34,14 +38,23 @@ export const CodeOptimizer: React.FC = () => {
           after: 'result = [item * 2 for item in items]',
           impact: 'medium'
         });
-        optimized = optimized.replace(
-          /(\w+)\s*=\s*\[\]\s*\n\s*for\s+(\w+)\s+in\s+(\w+):\s*\n\s*\1\.append\(([^)]+)\)/g,
-          '$1 = [$4 for $2 in $3]'
-        );
+        optimized = optimized.replace(forLoopPattern, '$1 = [$4 for $2 in $3]');
       }
 
-      // NumPy vectorization
-      if (code.includes('for') && (code.includes('math.') || code.includes('**'))) {
+      // String concatenation in loops
+      if (code.includes('for') && code.includes('+=') && code.includes('"')) {
+        optimizations.push({
+          type: 'performance',
+          title: 'Optimize String Concatenation',
+          description: 'Use join() instead of += for string concatenation in loops',
+          before: 'result = ""\nfor item in items:\n    result += str(item)',
+          after: 'result = "".join(str(item) for item in items)',
+          impact: 'high'
+        });
+      }
+
+      // NumPy optimization suggestions
+      if (code.includes('for') && (code.includes('math.') || code.includes('**') || code.includes('sqrt'))) {
         optimizations.push({
           type: 'performance',
           title: 'Use NumPy Vectorization',
@@ -50,22 +63,14 @@ export const CodeOptimizer: React.FC = () => {
           after: 'import numpy as np\narr = np.sqrt(arr)',
           impact: 'high'
         });
-      }
-
-      // String concatenation optimization
-      if (code.includes('+=') && code.includes('str')) {
-        optimizations.push({
-          type: 'performance',
-          title: 'Optimize String Concatenation',
-          description: 'Use join() instead of += for string concatenation in loops',
-          before: 'result = ""\nfor item in items:\n    result += str(item)',
-          after: 'result = "".join(str(item) for item in items)',
-          impact: 'medium'
-        });
+        
+        // Apply basic vectorization
+        optimized = optimized.replace(/for\s+\w+\s+in\s+range\(len\(\w+\)\):\s*\n\s*\w+\[\w+\]\s*=\s*math\.sqrt\(\w+\[\w+\]\)/g, 
+          'import numpy as np\n# Vectorized operation\narr = np.sqrt(arr)');
       }
 
       // Dictionary get() method
-      if (code.includes('if') && code.includes('in') && code.includes('dict')) {
+      if (code.includes('if') && code.includes(' in ') && code.includes('[')) {
         optimizations.push({
           type: 'best-practice',
           title: 'Use dict.get() Method',
@@ -76,20 +81,8 @@ export const CodeOptimizer: React.FC = () => {
         });
       }
 
-      // Machine Learning specific optimizations
-      if (code.includes('sklearn') || code.includes('fit') || code.includes('predict')) {
-        optimizations.push({
-          type: 'performance',
-          title: 'ML Pipeline Optimization',
-          description: 'Use sklearn pipelines for better code organization and performance',
-          before: 'scaler = StandardScaler()\nX_scaled = scaler.fit_transform(X)\nmodel = LogisticRegression()\nmodel.fit(X_scaled, y)',
-          after: 'from sklearn.pipeline import Pipeline\npipeline = Pipeline([\n    ("scaler", StandardScaler()),\n    ("model", LogisticRegression())\n])\npipeline.fit(X, y)',
-          impact: 'medium'
-        });
-      }
-
-      // Pandas optimizations
-      if (code.includes('pandas') || code.includes('df.')) {
+      // Pandas optimization
+      if (code.includes('iterrows') || code.includes('apply')) {
         optimizations.push({
           type: 'performance',
           title: 'Pandas Vectorization',
@@ -97,6 +90,21 @@ export const CodeOptimizer: React.FC = () => {
           before: 'for index, row in df.iterrows():\n    df.at[index, "new_col"] = row["col1"] * row["col2"]',
           after: 'df["new_col"] = df["col1"] * df["col2"]',
           impact: 'high'
+        });
+        
+        optimized = optimized.replace(/for\s+\w+,\s*\w+\s+in\s+\w+\.iterrows\(\):\s*\n\s*\w+\.at\[\w+,\s*['"]\w+['"]\]\s*=\s*\w+\[['"]\w+['"]\]\s*\*\s*\w+\[['"]\w+['"]\]/g,
+          '# Vectorized pandas operation\ndf["new_col"] = df["col1"] * df["col2"]');
+      }
+
+      // Machine Learning pipeline optimization
+      if (code.includes('fit_transform') && code.includes('fit')) {
+        optimizations.push({
+          type: 'best-practice',
+          title: 'ML Pipeline Optimization',
+          description: 'Use sklearn pipelines for better code organization',
+          before: 'scaler = StandardScaler()\nX_scaled = scaler.fit_transform(X)\nmodel = LogisticRegression()\nmodel.fit(X_scaled, y)',
+          after: 'from sklearn.pipeline import Pipeline\npipeline = Pipeline([\n    ("scaler", StandardScaler()),\n    ("model", LogisticRegression())\n])\npipeline.fit(X, y)',
+          impact: 'medium'
         });
       }
     }
@@ -113,10 +121,13 @@ export const CodeOptimizer: React.FC = () => {
           after: 'const result = arr.map(item => item * 2);',
           impact: 'medium'
         });
+        
+        optimized = optimized.replace(/const\s+\w+\s*=\s*\[\];\s*\n\s*for\s*\([^)]+\)\s*{\s*\n\s*\w+\.push\([^)]+\);\s*\n\s*}/g,
+          'const result = arr.map(item => item * 2);');
       }
 
-      // Async/await optimization
-      if (code.includes('Promise') && code.includes('.then')) {
+      // Promise chains to async/await
+      if (code.includes('.then') && code.includes('Promise')) {
         optimizations.push({
           type: 'readability',
           title: 'Use Async/Await',
@@ -128,13 +139,13 @@ export const CodeOptimizer: React.FC = () => {
       }
 
       // Object destructuring
-      if (code.includes('obj.') && code.includes('=')) {
+      if (code.includes('.') && code.includes('=') && code.includes('const')) {
         optimizations.push({
           type: 'readability',
           title: 'Use Destructuring',
           description: 'Use object destructuring for cleaner variable assignment',
-          before: 'const name = user.name;\nconst email = user.email;\nconst age = user.age;',
-          after: 'const { name, email, age } = user;',
+          before: 'const name = user.name;\nconst email = user.email;',
+          after: 'const { name, email } = user;',
           impact: 'low'
         });
       }
@@ -142,20 +153,38 @@ export const CodeOptimizer: React.FC = () => {
 
     // General optimizations for all languages
     
-    // Variable naming
-    if (/\b[a-z]\b/.test(code)) {
+    // Variable naming improvements
+    if (/\b[a-z]\b/.test(code) && code.includes('for')) {
       optimizations.push({
         type: 'readability',
         title: 'Improve Variable Names',
         description: 'Use descriptive variable names instead of single letters',
-        before: 'for i in range(n):\n    x = data[i]\n    y = process(x)',
-        after: 'for index in range(data_length):\n    current_item = data[index]\n    processed_result = process(current_item)',
+        before: 'for i in range(n):\n    x = data[i]',
+        after: 'for index in range(data_length):\n    current_item = data[index]',
         impact: 'medium'
+      });
+      
+      // Apply some basic variable name improvements
+      optimized = optimized.replace(/\bi\b/g, 'index')
+                           .replace(/\bj\b/g, 'inner_index')
+                           .replace(/\bn\b/g, 'length');
+    }
+
+    // Magic numbers
+    const magicNumberPattern = /\b\d{2,}\b/g;
+    if (magicNumberPattern.test(code)) {
+      optimizations.push({
+        type: 'best-practice',
+        title: 'Replace Magic Numbers',
+        description: 'Replace magic numbers with named constants',
+        before: 'if score > 85:\n    grade = "A"',
+        after: 'GRADE_A_THRESHOLD = 85\nif score > GRADE_A_THRESHOLD:\n    grade = "A"',
+        impact: 'low'
       });
     }
 
-    // Function length
-    const lines = code.split('\n');
+    // Function length check
+    const lines = code.split('\n').filter(line => line.trim().length > 0);
     if (lines.length > 20) {
       optimizations.push({
         type: 'best-practice',
@@ -167,16 +196,13 @@ export const CodeOptimizer: React.FC = () => {
       });
     }
 
-    // Magic numbers
-    if (/\b\d{2,}\b/.test(code)) {
-      optimizations.push({
-        type: 'best-practice',
-        title: 'Replace Magic Numbers',
-        description: 'Replace magic numbers with named constants',
-        before: 'if score > 85:\n    grade = "A"',
-        after: 'GRADE_A_THRESHOLD = 85\nif score > GRADE_A_THRESHOLD:\n    grade = "A"',
-        impact: 'low'
-      });
+    // Add imports if needed
+    if (optimized.includes('np.') && !optimized.includes('import numpy')) {
+      optimized = 'import numpy as np\n' + optimized;
+    }
+    
+    if (optimized.includes('Pipeline') && !optimized.includes('from sklearn.pipeline')) {
+      optimized = 'from sklearn.pipeline import Pipeline\n' + optimized;
     }
 
     return { optimized, optimizations };
@@ -255,20 +281,20 @@ export const CodeOptimizer: React.FC = () => {
               onChange={(e) => setInputCode(e.target.value)}
               placeholder={`Paste your ${language} code here...
 
-Example:
-# Linear regression implementation
-import numpy as np
+Example Python code:
+result = []
+for i in range(len(data)):
+    if i % 2 == 0:
+        result.append(data[i] * 2)
 
-def linear_regression(X, y):
-    result = []
-    for i in range(len(X)):
-        result.append(X[i] * 2 + 1)
-    
-    error = 0
-    for i in range(len(y)):
-        error += (result[i] - y[i]) ** 2
-    
-    return result, error`}
+# String concatenation example
+output = ""
+for item in items:
+    output += str(item) + " "
+
+# Pandas example
+for index, row in df.iterrows():
+    df.at[index, 'new_col'] = row['col1'] * row['col2']`}
               className="w-full h-80 p-4 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
             
