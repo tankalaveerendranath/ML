@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Brain, Menu, X, Home, BookOpen, Upload, Mail, Code } from 'lucide-react';
+import { Brain, Menu, X, Home, BookOpen, Upload, Mail } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 interface HeaderProps {
@@ -15,7 +15,6 @@ export const Header: React.FC<HeaderProps> = ({ currentView, onNavigate }) => {
     { id: 'dashboard', label: 'Home', icon: Home },
     { id: 'about', label: 'About ML', icon: BookOpen },
     { id: 'dataset', label: 'Dataset Upload', icon: Upload },
-    { id: 'optimizer', label: 'Code Optimizer', icon: Code },
     { id: 'contact', label: 'Contact', icon: Mail },
   ];
 

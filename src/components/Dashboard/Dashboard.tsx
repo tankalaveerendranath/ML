@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
-import { Upload, Sparkles, Code } from 'lucide-react';
+import { Upload, Sparkles } from 'lucide-react';
 import { Header } from '../Layout/Header';
 import { Footer } from '../Layout/Footer';
 import { AlgorithmCard } from './AlgorithmCard';
 import { AlgorithmExplainer } from '../Algorithms/AlgorithmExplainer';
 import { DatasetUpload } from '../DatasetUpload/DatasetUpload';
-import { CodeOptimizer } from '../CodeOptimization/CodeOptimizer';
 import { AboutML } from '../Pages/AboutML';
 import { Contact } from '../Pages/Contact';
 import { algorithms } from '../../data/algorithms';
 import { Algorithm } from '../../types';
 
-type ViewType = 'dashboard' | 'algorithm' | 'dataset' | 'optimizer' | 'about' | 'contact';
+type ViewType = 'dashboard' | 'algorithm' | 'dataset' | 'about' | 'contact';
 
 export const Dashboard: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
@@ -53,18 +52,6 @@ export const Dashboard: React.FC = () => {
         <Header currentView={currentView} onNavigate={handleNavigate} />
         <div className="flex-1 bg-gray-50">
           <DatasetUpload onBack={handleBackToDashboard} />
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (currentView === 'optimizer') {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header currentView={currentView} onNavigate={handleNavigate} />
-        <div className="flex-1 bg-gray-50">
-          <CodeOptimizer />
         </div>
         <Footer />
       </div>
@@ -118,13 +105,6 @@ export const Dashboard: React.FC = () => {
               >
                 <Upload className="w-5 h-5 mr-2" />
                 Upload Dataset & Get Recommendations
-              </button>
-              <button
-                onClick={() => setCurrentView('optimizer')}
-                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-medium rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-md hover:shadow-lg"
-              >
-                <Code className="w-5 h-5 mr-2" />
-                AI Code Optimizer
               </button>
               <button 
                 onClick={() => setCurrentView('about')}
