@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { AuthPage } from './components/Auth/AuthPage';
 import { Dashboard } from './components/Dashboard/Dashboard';
@@ -23,6 +23,24 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   }
 
   return user ? <>{children}</> : <Navigate to="/auth" replace />;
+};
+
+const AlgorithmRoute: React.FC = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  
+  const algorithm = algorithms.find(algo => algo.id === id);
+  
+  if (!algorithm) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return (
+    <AlgorithmExplainer 
+      algorithm={algorithm} 
+      onBack={() => navigate('/')}
+    />
+  );
 };
 
 const AppContent: React.FC = () => {
@@ -54,24 +72,6 @@ const AppContent: React.FC = () => {
         </Routes>
       </div>
     </Router>
-  );
-};
-
-const AlgorithmRoute: React.FC = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  
-  const algorithm = algorithms.find(algo => algo.id === id);
-  
-  if (!algorithm) {
-    return <Navigate to="/" replace />;
-  }
-  
-  return (
-    <AlgorithmExplainer 
-      algorithm={algorithm} 
-      onBack={() => navigate('/')}
-    />
   );
 };
 
